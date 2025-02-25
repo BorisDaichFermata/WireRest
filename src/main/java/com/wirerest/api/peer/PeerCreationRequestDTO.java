@@ -29,5 +29,4 @@ public class PeerCreationRequestDTO {
     @Max(65535)
     private final Integer persistentKeepalive;
 
-
 }

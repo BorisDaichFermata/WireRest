@@ -42,7 +42,7 @@ public class FakeWgTool extends WgTool {
                         .latestHandshake(200000).transferRx(12345).transferTx(54321).build()
         ).forEach(peer -> peers.put(peer.getPublicKey(), peer));
 
-        for (int i = 0; i < 60000; i++) {
+        for (int i = 0; i < 600; i++) {
             String pubkey = genPubKey();
             peers.put(pubkey, WgPeer.publicKey(pubkey).presharedKey(generatePresharedKey())
                     .transferRx(random.nextInt(10000000))

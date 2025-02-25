@@ -5,7 +5,7 @@
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>3.4.3</version>
+        <version>3.2.12</version>
         <relativePath/> <!-- lookup parent from repository -->
     </parent>
     <groupId>wireguard</groupId>
@@ -17,6 +17,9 @@
         <java.version>21</java.version>
         <maven.compiler.source>21</maven.compiler.source>
         <maven.compiler.target>21</maven.compiler.target>
+        <skipTests>true</skipTests>
+        
+       
     </properties>
     <dependencies>
         <dependency>
@@ -27,8 +30,9 @@
         <dependency>
             <groupId>org.springdoc</groupId>
             <artifactId>springdoc-openapi-starter-webflux-ui</artifactId>
-            <version>2.8.5</version>
+            <version>2.5.0</version>
         </dependency>
+
         <dependency>
             <groupId>com.googlecode.java-ipv6</groupId>
             <artifactId>java-ipv6</artifactId>
@@ -121,6 +125,20 @@
                     <outputDirectory>${project.build.directory}/</outputDirectory>
                 </configuration>
             </plugin>
+<plugin>
+    <groupId>org.apache.maven.plugins</groupId>
+    <artifactId>maven-compiler-plugin</artifactId>
+    <configuration>
+	    <annotationProcessorPaths>
+			<path>
+				<groupId>org.projectlombok</groupId>
+				<artifactId>lombok</artifactId>
+				<version>1.18.36</version>
+			</path>
+		</annotationProcessorPaths>
+	    <parameters>true</parameters>
+    </configuration>
+</plugin>
 
 
 

@@ -1,11 +1,15 @@
 package com.wirerest.api.openAPI.examples;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import io.swagger.v3.oas.models.examples.Example;
-import lombok.AllArgsConstructor;
-import lombok.Data;
+import lombok.*;
 
 @Data
+@EqualsAndHashCode(callSuper = true)
+@ToString(callSuper = true)
 @AllArgsConstructor
 public class IdentifiedExample extends Example {
-    private final String key;
+	@JsonIgnore
+	private final String key;
 }

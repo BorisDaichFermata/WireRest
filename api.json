@@ -1,0 +1,1638 @@
+{
+  "openapi": "3.0.1",
+  "info": {
+    "title": "WireRest",
+    "description": "WireRest is a powerful, restful stateless API for Wireguard.\nDefault token is 'admin'",
+    "contact": {
+      "name": "FokiDoki - GitHub",
+      "url": "https://github.com/FokiDoki/WireRest"
+    },
+    "license": {
+      "name": "License",
+      "url": "https://github.com/FokiDoki/WireRest/blob/master/LICENSE"
+    },
+    "version": "0.7"
+  },
+  "servers": [
+    {
+      "url": "http://localhost:8080",
+      "description": "Generated server url"
+    }
+  ],
+  "security": [
+    {
+      "Token Authentication": [
+        
+      ]
+    }
+  ],
+  "tags": [
+    {
+      "name": "Actuator",
+      "description": "Monitor and interact",
+      "externalDocs": {
+        "description": "Spring Boot Actuator Web API Documentation",
+        "url": "https://docs.spring.io/spring-boot/docs/current/actuator-api/html/"
+      }
+    }
+  ],
+  "paths": {
+    "/v1/peers": {
+      "get": {
+        "tags": [
+          "Peers"
+        ],
+        "summary": "List of peers",
+        "description": "Get a list of all existing peers. Peers are displayed not completely, but page by page. Warning, caching is enabled by default, any changes made NOT with wirerest will not appear immediately, but during the next synchronization (60s by default)",
+        "operationId": "getPeers",
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "description": "Page number"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "Page size (In case of 0, all peers will be returned)",
+            "schema": {
+              "type": "string",
+              "default": "100"
+            }
+          },
+          {
+            "name": "sort",
+            "in": "query",
+            "description": "Sort key and direction separated by a dot. The keys are the same as in the answer. Direction is optional and may have value DESC (High to low) and ASC (Low to high). Using with a large number of the peers (3000 or more) affects performance. Example: \"lastHandshakeTime.DESC\""
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PageDTO"
+                  }
+                },
+                "examples": {
+                  "Page": {
+                    "$ref": "#/components/examples/PageWithPeers"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AppError"
+                },
+                "examples": {
+                  "Invalid key format": {
+                    "$ref": "#/components/examples/InvalidPubKey400"
+                  },
+                  "Invalid page": {
+                    "$ref": "#/components/examples/InvalidPage400"
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Authorization token is invalid or not provided",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "integer",
+                      "format": "int32"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "examples": {
+                  "InvalidToken": {
+                    "summary": "Authorization token is invalid or not provided",
+                    "value": {
+                      "code": 403,
+                      "message": "Token is invalid or not provided"
+                    },
+                    "key": "InvalidToken"
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "integer",
+                      "format": "int32"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "examples": {
+                  "UnexpectedError500": {
+                    "summary": "Unexpected error",
+                    "value": {
+                      "code": 500,
+                      "message": "Unexpected error"
+                    },
+                    "key": "UnexpectedError500"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Token": [
+              
+            ]
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "Peers"
+        ],
+        "summary": "Create peer",
+        "description": "Create peer. Data that is not provided will be generated automatically (Even the ip address!).\nGeneration of some fields (For example, Preshared key) can be disabled by sending an empty value.\nAvailable parameters:\n- publicKey - Public key of the peer (Will be generated if not provided)\n- presharedKey - Preshared key or empty if no psk required (Will be generated if not provided)\n- privateKey - Private key of the peer (Will be generated if not provided)\n- allowedIps - Ip of new peer in wireguard network interface, or empty if no address is required (Will be generated if not provided). Example: 10.0.0.11/32\n- persistentKeepalive - Persistent keepalive interval in seconds (0 is default)\n",
+        "operationId": "createPeer",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PeerCreationRequestSchema"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreatedPeerDTO"
+                },
+                "examples": {
+                  "Created peer": {
+                    "$ref": "#/components/examples/createdPeer"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AppError"
+                },
+                "examples": {
+                  "Invalid key": {
+                    "$ref": "#/components/examples/InvalidPubKey400"
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Authorization token is invalid or not provided",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "integer",
+                      "format": "int32"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "examples": {
+                  "InvalidToken": {
+                    "summary": "Authorization token is invalid or not provided",
+                    "value": {
+                      "code": 403,
+                      "message": "Token is invalid or not provided"
+                    },
+                    "key": "InvalidToken"
+                  }
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Peer with new public key already exists",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AppError"
+                  }
+                },
+                "examples": {
+                  "Already exists": {
+                    "$ref": "#/components/examples/peerAlreadyExists409"
+                  },
+                  "Ip already used": {
+                    "$ref": "#/components/examples/alreadyUsed409"
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "integer",
+                      "format": "int32"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "examples": {
+                  "No free ip": {
+                    "$ref": "#/components/examples/RangeNoFreeIp500"
+                  },
+                  "UnexpectedError500": {
+                    "summary": "Unexpected error",
+                    "value": {
+                      "code": 500,
+                      "message": "Unexpected error"
+                    },
+                    "key": "UnexpectedError500"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Token": [
+              
+            ]
+          }
+        ]
+      },
+      "delete": {
+        "tags": [
+          "Peers"
+        ],
+        "summary": "Delete peer",
+        "description": "Delete peer by public key",
+        "operationId": "deletePeer",
+        "parameters": [
+          {
+            "name": "publicKey",
+            "in": "query",
+            "description": "The public key of the peer to be deleted",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WgPeerDTO"
+                },
+                "examples": {
+                  "Peer": {
+                    "$ref": "#/components/examples/peer"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AppError"
+                },
+                "examples": {
+                  "Invalid key format": {
+                    "$ref": "#/components/examples/InvalidPubKey400"
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Authorization token is invalid or not provided",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "integer",
+                      "format": "int32"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "examples": {
+                  "InvalidToken": {
+                    "summary": "Authorization token is invalid or not provided",
+                    "value": {
+                      "code": 403,
+                      "message": "Token is invalid or not provided"
+                    },
+                    "key": "InvalidToken"
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AppError"
+                },
+                "examples": {
+                  "Invalid key format": {
+                    "$ref": "#/components/examples/peerNotFound"
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "integer",
+                      "format": "int32"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "examples": {
+                  "UnexpectedError500": {
+                    "summary": "Unexpected error",
+                    "value": {
+                      "code": 500,
+                      "message": "Unexpected error"
+                    },
+                    "key": "UnexpectedError500"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Token": [
+              
+            ]
+          }
+        ]
+      },
+      "patch": {
+        "tags": [
+          "Peers"
+        ],
+        "summary": "Update peer by public key",
+        "description": "Update peer by public key. Do not provide fields that you do not want to change.",
+        "operationId": "updatePeer",
+        "parameters": [
+          {
+            "name": "publicKey",
+            "in": "query",
+            "description": "Current public key of the peer",
+            "required": true
+          },
+          {
+            "name": "newPublicKey",
+            "in": "query",
+            "description": "New public key of the peer. Warning: If you change the public key, latest handshake and transfer data will be lost. "
+          },
+          {
+            "name": "presharedKey",
+            "in": "query",
+            "description": "Preshared key or empty if no psk required (Empty if not provided)",
+            "allowEmptyValue": true
+          },
+          {
+            "name": "endpoint",
+            "in": "query",
+            "description": "Socket IP:port ",
+            "allowEmptyValue": true
+          },
+          {
+            "name": "allowedIps",
+            "in": "query",
+            "description": "New ips of the peer (Exists will be replaced)  Example: 10.0.0.11/32",
+            "allowEmptyValue": true,
+            "schema": {
+              "uniqueItems": true,
+              "type": "array"
+            }
+          },
+          {
+            "name": "persistentKeepalive",
+            "in": "query",
+            "description": "New persistent keepalive interval in seconds (0 if not provided)",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/WgPeerDTO"
+                  }
+                },
+                "examples": {
+                  "Peer": {
+                    "$ref": "#/components/examples/peer"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AppError"
+                },
+                "examples": {
+                  "Invalid key format": {
+                    "$ref": "#/components/examples/InvalidPubKey400"
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Authorization token is invalid or not provided",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "integer",
+                      "format": "int32"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "examples": {
+                  "InvalidToken": {
+                    "summary": "Authorization token is invalid or not provided",
+                    "value": {
+                      "code": 403,
+                      "message": "Token is invalid or not provided"
+                    },
+                    "key": "InvalidToken"
+                  }
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/WgPeerDTO"
+                  }
+                },
+                "examples": {
+                  "Peer exists": {
+                    "$ref": "#/components/examples/peerAlreadyExists409"
+                  },
+                  "Ip already used": {
+                    "$ref": "#/components/examples/alreadyUsed409"
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "integer",
+                      "format": "int32"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "examples": {
+                  "UnexpectedError500": {
+                    "summary": "Unexpected error",
+                    "value": {
+                      "code": 500,
+                      "message": "Unexpected error"
+                    },
+                    "key": "UnexpectedError500"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Token": [
+              
+            ]
+          }
+        ]
+      }
+    },
+    "/v1/service/stats": {
+      "get": {
+        "tags": [
+          "Service"
+        ],
+        "summary": "Get application statistics",
+        "description": "Timestamp - Unix milliseconds timestamp of the stats snapshot\n\npeers - number of peers in the interface\n\ntotalV4Ips - number of IPv4 addresses (/32) in the interface\n\nfreeV4Ips - number of addresses (/32) that are not in use\n\ntransferTx - total transmitted bytes for all peers\n\ntransferRx - total received bytes for all peers",
+        "operationId": "getStats",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/StatsSnapshotDto"
+                  }
+                },
+                "examples": {
+                  "Stats": {
+                    "$ref": "#/components/examples/stats"
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Authorization token is invalid or not provided",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "integer",
+                      "format": "int32"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "examples": {
+                  "InvalidToken": {
+                    "summary": "Authorization token is invalid or not provided",
+                    "value": {
+                      "code": 403,
+                      "message": "Token is invalid or not provided"
+                    },
+                    "key": "InvalidToken"
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "integer",
+                      "format": "int32"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "examples": {
+                  "UnexpectedError500": {
+                    "summary": "Unexpected error",
+                    "value": {
+                      "code": 500,
+                      "message": "Unexpected error"
+                    },
+                    "key": "UnexpectedError500"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Token": [
+              
+            ]
+          }
+        ]
+      }
+    },
+    "/v1/service/logs": {
+      "get": {
+        "tags": [
+          "Service"
+        ],
+        "summary": "Get application logs",
+        "description": "The default limit is 1000 logs. The limit can be changed by passing the --logging.api.max-elements=<limit> parameter",
+        "operationId": "getLogs",
+        "parameters": [
+          {
+            "name": "from",
+            "in": "query",
+            "description": "Return logs from timestamp. Format: Unix milliseconds (In case of 0, all logs will be returned)",
+            "required": false,
+            "schema": {
+              "minimum": 0,
+              "type": "integer",
+              "format": "int64",
+              "default": 0
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "Limit the number of logs (In case of 0, all logs will be returned)",
+            "required": false,
+            "schema": {
+              "minimum": 0,
+              "type": "integer",
+              "format": "int64",
+              "default": 0
+            }
+          },
+          {
+            "name": "levels",
+            "in": "query",
+            "description": "List of levels to filter by, if empty all logs will be returned.Valid values are: TRACE, DEBUG, INFO, WARN, ERROR. Example: INFO,ERROR",
+            "required": false,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "enum": [
+                  "TRACE",
+                  "DEBUG",
+                  "INFO",
+                  "WARN",
+                  "ERROR"
+                ]
+              },
+              "default": [
+                
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/LoggingEventDto"
+                  }
+                },
+                "examples": {
+                  "Logs": {
+                    "$ref": "#/components/examples/logs"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AppError"
+                  }
+                },
+                "examples": {
+                  "Bad limit": {
+                    "$ref": "#/components/examples/logsLimit400"
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Authorization token is invalid or not provided",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "integer",
+                      "format": "int32"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "examples": {
+                  "InvalidToken": {
+                    "summary": "Authorization token is invalid or not provided",
+                    "value": {
+                      "code": 403,
+                      "message": "Token is invalid or not provided"
+                    },
+                    "key": "InvalidToken"
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "integer",
+                      "format": "int32"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "examples": {
+                  "UnexpectedError500": {
+                    "summary": "Unexpected error",
+                    "value": {
+                      "code": 500,
+                      "message": "Unexpected error"
+                    },
+                    "key": "UnexpectedError500"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Token": [
+              
+            ]
+          }
+        ]
+      }
+    },
+    "/v1/peers/find": {
+      "get": {
+        "tags": [
+          "Peers"
+        ],
+        "summary": "Find by public key",
+        "operationId": "getPeerByPublicKey",
+        "parameters": [
+          {
+            "name": "publicKey",
+            "in": "query",
+            "description": "The public key of the peer to be found",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WgPeerDTO"
+                },
+                "examples": {
+                  "Peer": {
+                    "$ref": "#/components/examples/peer"
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Authorization token is invalid or not provided",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "integer",
+                      "format": "int32"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "examples": {
+                  "InvalidToken": {
+                    "summary": "Authorization token is invalid or not provided",
+                    "value": {
+                      "code": 403,
+                      "message": "Token is invalid or not provided"
+                    },
+                    "key": "InvalidToken"
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AppError"
+                },
+                "examples": {
+                  "Invalid key format": {
+                    "$ref": "#/components/examples/peerNotFound"
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "integer",
+                      "format": "int32"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "examples": {
+                  "UnexpectedError500": {
+                    "summary": "Unexpected error",
+                    "value": {
+                      "code": 500,
+                      "message": "Unexpected error"
+                    },
+                    "key": "UnexpectedError500"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Token": [
+              
+            ]
+          }
+        ]
+      }
+    },
+    "/v1/interface": {
+      "get": {
+        "tags": [
+          "Interface"
+        ],
+        "summary": "Get interface configuration",
+        "description": "If caching is enabled, the interface configuration is updated every 300 seconds",
+        "operationId": "getInterface",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WgInterfaceDTO"
+                },
+                "examples": {
+                  "Interface": {
+                    "$ref": "#/components/examples/interface"
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Authorization token is invalid or not provided",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "integer",
+                      "format": "int32"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "examples": {
+                  "InvalidToken": {
+                    "summary": "Authorization token is invalid or not provided",
+                    "value": {
+                      "code": 403,
+                      "message": "Token is invalid or not provided"
+                    },
+                    "key": "InvalidToken"
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "integer",
+                      "format": "int32"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "examples": {
+                  "UnexpectedError500": {
+                    "summary": "Unexpected error",
+                    "value": {
+                      "code": 500,
+                      "message": "Unexpected error"
+                    },
+                    "key": "UnexpectedError500"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Token": [
+              
+            ]
+          }
+        ]
+      }
+    },
+    "/actuator/prometheus": {
+      "get": {
+        "tags": [
+          "Actuator"
+        ],
+        "summary": "Actuator web endpoint 'prometheus'",
+        "operationId": "prometheus",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain;version=0.0.4;charset=utf-8": {
+                "schema": {
+                  "type": "object"
+                }
+              },
+              "application/openmetrics-text;version=1.0.0;charset=utf-8": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Authorization token is invalid or not provided",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "integer",
+                      "format": "int32"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "examples": {
+                  "InvalidToken": {
+                    "summary": "Authorization token is invalid or not provided",
+                    "value": {
+                      "code": 403,
+                      "message": "Token is invalid or not provided"
+                    },
+                    "key": "InvalidToken"
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "integer",
+                      "format": "int32"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "examples": {
+                  "UnexpectedError500": {
+                    "summary": "Unexpected error",
+                    "value": {
+                      "code": 500,
+                      "message": "Unexpected error"
+                    },
+                    "key": "UnexpectedError500"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/actuator": {
+      "get": {
+        "tags": [
+          "Actuator"
+        ],
+        "summary": "Actuator root web endpoint",
+        "operationId": "links",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/vnd.spring-boot.actuator.v3+json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": {
+                    "type": "object",
+                    "additionalProperties": {
+                      "$ref": "#/components/schemas/Link"
+                    }
+                  }
+                }
+              },
+              "application/vnd.spring-boot.actuator.v2+json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": {
+                    "type": "object",
+                    "additionalProperties": {
+                      "$ref": "#/components/schemas/Link"
+                    }
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": {
+                    "type": "object",
+                    "additionalProperties": {
+                      "$ref": "#/components/schemas/Link"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Authorization token is invalid or not provided",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "integer",
+                      "format": "int32"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "examples": {
+                  "InvalidToken": {
+                    "summary": "Authorization token is invalid or not provided",
+                    "value": {
+                      "code": 403,
+                      "message": "Token is invalid or not provided"
+                    },
+                    "key": "InvalidToken"
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "integer",
+                      "format": "int32"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "examples": {
+                  "UnexpectedError500": {
+                    "summary": "Unexpected error",
+                    "value": {
+                      "code": 500,
+                      "message": "Unexpected error"
+                    },
+                    "key": "UnexpectedError500"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "AppError": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "message": {
+            "type": "string"
+          }
+        }
+      },
+      "WgInterfaceDTO": {
+        "type": "object",
+        "properties": {
+          "privateKey": {
+            "type": "string"
+          },
+          "publicKey": {
+            "type": "string"
+          },
+          "listenPort": {
+            "maximum": 65535,
+            "minimum": 1,
+            "type": "integer",
+            "format": "int32"
+          },
+          "fwMark": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "PageDTO": {
+        "type": "object",
+        "properties": {
+          "totalPages": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "currentPage": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "content": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            }
+          }
+        }
+      },
+      "PeerCreationRequestSchema": {
+        "type": "object",
+        "example": {
+          "publicKey": "qHnbCAkk9xn3NqZ3lnC3TD7DwjnhTGmE8BrWd+9QPEo=",
+          "presharedKey": "KEeLDNgckUkGDsomn6Q7UQvM409BRGLNmnG1w0Y+cVQ=",
+          "privateKey": "wGzxmo5PiRGwH4e2SkahWzGetwbrk7NZ3Pcj16hKJWk=",
+          "allowedIps": [
+            "10.0.0.10/32"
+          ],
+          "persistentKeepalive": 0
+        }
+      },
+      "StatsSnapshotDto": {
+        "type": "object",
+        "properties": {
+          "timestamp": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "peers": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "totalV4Ips": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "freeV4Ips": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "transferTx": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "transferRx": {
+            "type": "integer",
+            "format": "int64"
+          }
+        }
+      },
+      "LoggingEventDto": {
+        "type": "object",
+        "properties": {
+          "level": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          },
+          "timestamp": {
+            "type": "integer",
+            "format": "int64"
+          }
+        }
+      },
+      "WgPeerDTO": {
+        "type": "object",
+        "properties": {
+          "publicKey": {
+            "type": "string"
+          },
+          "presharedKey": {
+            "type": "string"
+          },
+          "endpoint": {
+            "type": "string"
+          },
+          "allowedSubnets": {
+            "uniqueItems": true,
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "latestHandshake": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "transferRx": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "transferTx": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "persistentKeepalive": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "CreatedPeerDTO": {
+        "type": "object",
+        "properties": {
+          "publicKey": {
+            "type": "string"
+          },
+          "presharedKey": {
+            "type": "string"
+          },
+          "privateKey": {
+            "type": "string"
+          },
+          "allowedSubnets": {
+            "uniqueItems": true,
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "persistentKeepalive": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "Link": {
+        "type": "object",
+        "properties": {
+          "href": {
+            "type": "string"
+          },
+          "templated": {
+            "type": "boolean"
+          }
+        }
+      }
+    },
+    "examples": {
+      "createdPeer": {
+        "summary": "Created peer",
+        "value": {
+          "publicKey": "AhM4WLR7ETzLYDQ0zEq/0pvbYAxsbLwzzlIAdWhR7yg=",
+          "presharedKey": "q2MpyyqfAarG+zoVztTJk9ykQCVmOdBePtcmwZEc2iY=",
+          "privateKey": "+EWn9NeR2pVuFHihYMC6LKreccd5VIW4prUkzHLy0nw=",
+          "allowedSubnets": [
+            "10.1.21.235/32"
+          ],
+          "persistentKeepalive": 0
+        },
+        "key": "createdPeer"
+      },
+      "logsLimit400": {
+        "summary": "Invalid limit",
+        "value": {
+          "code": 400,
+          "message": "getLogs.limit: must be greater than or equal to 0"
+        },
+        "key": "logsLimit400"
+      },
+      "PageWithPeers": {
+        "summary": "Page with limit 1",
+        "value": {
+          "totalPages": 100,
+          "currentPage": 0,
+          "content": [
+            {
+              "publicKey": "ALD3x7qWP0W/4zC26jFozxw28vXJsazA33KnHF+AfHw=",
+              "presharedKey": "3hFqZXqzO+YkVL4nX2siavxK1Z3h5lRLkEQz1qf3giI=",
+              "endpoint": "123.23.2.3:55412",
+              "allowedSubnets": [
+                "2002:0:0:1234::/64",
+                "10.1.142.196/32"
+              ],
+              "latestHandshake": 1690200786,
+              "transferRx": 12345,
+              "transferTx": 54321,
+              "persistentKeepalive": 25
+            }
+          ]
+        },
+        "key": "PageWithPeers"
+      },
+      "InvalidPage400": {
+        "summary": "Invalid Page",
+        "value": {
+          "code": 400,
+          "message": "Page 101 requested, but total pages 100"
+        },
+        "key": "InvalidPage400"
+      },
+      "RangeNoFreeIp500": {
+        "summary": "No free ip",
+        "value": {
+          "code": 500,
+          "message": "The range 10.0.0.0-10.0.0.255 has no free ip that can be assigned"
+        },
+        "key": "RangeNoFreeIp500"
+      },
+      "peerNotFound": {
+        "summary": "Peer not found",
+        "value": {
+          "code": 404,
+          "message": "Peer with public key cHViQ0F4Tnc9PUZha2VQdWJLZXkgICAgICAgICAxOA== not found"
+        },
+        "key": "peerNotFound"
+      },
+      "interface": {
+        "summary": "Interface",
+        "value": {
+          "privateKey": "iNpmL6pHFpBjOTKttQ2zfljJ6nMlyAeN1Xd7jQNVLGs=",
+          "publicKey": "YFsZ0UjLVPeFOKZhWiVBVQMPnObwY0tuXLtjPfbqmF8=",
+          "listenPort": 51820,
+          "fwMark": 0
+        },
+        "key": "interface"
+      },
+      "peerAlreadyExists409": {
+        "summary": "Peer already exists",
+        "value": {
+          "code": 409,
+          "message": "Peer with public key cHViQ0F4Tnc9PUZha2VQdWJLZXkgICAgICAgICAxOA== already exists"
+        },
+        "key": "peerAlreadyExists409"
+      },
+      "PeerCreationRequestSchema": {
+        "value": {
+          "publicKey": "qHnbCAkk9xn3NqZ3lnC3TD7DwjnhTGmE8BrWd+9QPEo=",
+          "presharedKey": "KEeLDNgckUkGDsomn6Q7UQvM409BRGLNmnG1w0Y+cVQ=",
+          "privateKey": "wGzxmo5PiRGwH4e2SkahWzGetwbrk7NZ3Pcj16hKJWk=",
+          "allowedIps": [
+            "10.0.0.10/32"
+          ],
+          "persistentKeepalive": 0
+        },
+        "key": "PeerCreationRequestSchema"
+      },
+      "stats": {
+        "summary": "Stats",
+        "value": {
+          "timestamp": 1691322509881,
+          "peers": 50208,
+          "totalV4Ips": 65536,
+          "freeV4Ips": 9562,
+          "transferTx": 299314471044,
+          "transferRx": 300455868743
+        },
+        "key": "stats"
+      },
+      "peer": {
+        "summary": "Example peer",
+        "value": {
+          "publicKey": "ALD3x7qWP0W/4zC26jFozxw28vXJsazA33KnHF+AfHw=",
+          "presharedKey": "3hFqZXqzO+YkVL4nX2siavxK1Z3h5lRLkEQz1qf3giI=",
+          "endpoint": "123.23.2.3:55412",
+          "allowedSubnets": [
+            "2002:0:0:1234::/64",
+            "10.1.142.196/32"
+          ],
+          "latestHandshake": 1690200786,
+          "transferRx": 12345,
+          "transferTx": 54321,
+          "persistentKeepalive": 25
+        },
+        "key": "peer"
+      },
+      "alreadyUsed409": {
+        "summary": "Already Used",
+        "value": {
+          "code": 409,
+          "message": "Subnet 10.0.0.12/32 is is already used"
+        },
+        "key": "alreadyUsed409"
+      },
+      "InvalidToken": {
+        "summary": "Authorization token is invalid or not provided",
+        "value": {
+          "code": 403,
+          "message": "Token is invalid or not provided"
+        },
+        "key": "InvalidToken"
+      },
+      "UnexpectedError500": {
+        "summary": "Unexpected error",
+        "value": {
+          "code": 500,
+          "message": "Unexpected error"
+        },
+        "key": "UnexpectedError500"
+      },
+      "InvalidPubKey400": {
+        "summary": "Invalid public key",
+        "value": {
+          "code": 400,
+          "message": "publicKey.value: Invalid key format (Base64 required) (test provided), publicKey.value: Key must be 44 characters long (test provided)"
+        },
+        "key": "InvalidPubKey400"
+      },
+      "logs": {
+        "summary": "Logs",
+        "value": [
+          {
+            "level": "INFO",
+            "message": "Init duration for springdoc-openapi is: 529 ms",
+            "timestamp": 1690301255231
+          },
+          {
+            "level": "ERROR",
+            "message": "Peer with public key ALD3x7qWP0W/4zC26jFozxw28vXJsazA33KnHF+AfHw= not found",
+            "timestamp": 1690301333239
+          }
+        ],
+        "key": "logs"
+      }
+    },
+    "securitySchemes": {
+      "Token": {
+        "type": "http",
+        "scheme": "Bearer"
+      }
+    }
+  }
+}

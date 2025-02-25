@@ -66,7 +66,10 @@ public class DeletePeerController {
                                     })})
             }
     )
-    @Parameter(name = "publicKey", description = "The public key of the peer to be deleted", required = true)
+    @Parameter(name = "publicKey",//
+    description = "The public key of the peer to be deleted",//
+    required = true ,//
+    schema = @Schema(type = "string"))
     @Parameter(name = "publicKeyDTO", hidden = true)
     @DeleteMapping
     public WgPeerDTO deletePeer(@Valid PublicKeyDTO publicKeyDTO) {

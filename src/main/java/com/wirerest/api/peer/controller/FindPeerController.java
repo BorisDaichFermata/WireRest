@@ -60,7 +60,7 @@ public class FindPeerController {
                                                     ref = "#/components/examples/peerNotFound")
                                     })})
             })
-    @Parameter(name = "publicKey", description = "The public key of the peer to be found", required = true)
+    @Parameter(name = "publicKey", description = "The public key of the peer to be found", required = true,schema = @Schema(type = "string"))
     @Parameter(name = "publicKeyDTO", hidden = true)
     @GetMapping("/find")
     public WgPeerDTO getPeerByPublicKey(

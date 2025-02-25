@@ -31,60 +31,51 @@ import org.springframework.web.bind.annotation.RestController;
 @Validated
 public class GetPeersController {
 
-    private final WgPeerService wgPeerService;
+	private final WgPeerService wgPeerService;
 
-    private final WgPeerDTOFromWgPeerConverter peerDTOConverter = new WgPeerDTOFromWgPeerConverter();
-    private final PageRequestFromDTOConverter pageRequestConverter = new PageRequestFromDTOConverter();
-    private final PageDTOFromPageTypeChangeConverter<WgPeer, WgPeerDTO> pageDTOConverter = new PageDTOFromPageTypeChangeConverter<>(peerDTOConverter);
+	private final WgPeerDTOFromWgPeerConverter peerDTOConverter = new WgPeerDTOFromWgPeerConverter();
+	private final PageRequestFromDTOConverter pageRequestConverter = new PageRequestFromDTOConverter();
+	private final PageDTOFromPageTypeChangeConverter<WgPeer, WgPeerDTO> pageDTOConverter = new PageDTOFromPageTypeChangeConverter<>(peerDTOConverter);
 
-    public GetPeersController(WgPeerService wgPeerService) {
-        this.wgPeerService = wgPeerService;
-    }
+	public GetPeersController(WgPeerService wgPeerService) {
+		this.wgPeerService = wgPeerService;
+	}
 
-    @Operation(summary = "List of peers",
-            description = "Get a list of all existing peers. Peers are displayed not completely, but page by page." +
-                    " Warning, caching is enabled by default, any changes made NOT with wirerest will not appear " +
-                    "immediately, but during the next synchronization (60s by default)",
-            tags = {"Peers"},
-            security = @SecurityRequirement(name = "Token"),
-            responses = {
-                    @ApiResponse(responseCode = "200", description = "OK",
-                            content = {
-                                    @Content(
-                                            mediaType = "application/json",
-                                            array = @ArraySchema(schema = @Schema(nullable = true, implementation = PageDTO.class)),
-                                            examples = {
-                                                    @ExampleObject(name = "Page", ref = "#/components/examples/PageWithPeers")
-                                            }
-                                    )
-                            }
-                    ),
-                    @ApiResponse(responseCode = "400", description = "Bad Request",
-                            content = {@Content(mediaType = "application/json",
-                                    schema = @Schema(implementation = AppError.class, name = "BadRequestExample"),
-                                    examples = {
-                                            @ExampleObject(name = "Invalid key format",
-                                                    ref = "#/components/examples/InvalidPubKey400"),
-                                            @ExampleObject(name = "Invalid page",
-                                                    ref = "#/components/examples/InvalidPage400"),
-                                    }
-                            )}
-                    )
-            }
-    )
-    @GetMapping
-    @Parameter(name = "page", description = "Page number")
-    @Parameter(name = "limit", description = "Page size (In case of 0, all peers will be returned)", schema = @Schema(defaultValue = "100"))
-    @Parameter(name = "sort", description = "Sort key and direction separated by a dot. The keys are the same as in the answer. " +
-            "Direction is optional and may have value DESC (High to low) and ASC (Low to high). Using with a large number " +
-            "of the peers (3000 or more) affects performance. Example: \"lastHandshakeTime.DESC\"")
-    @Parameter(name = "pageRequestDTO", hidden = true)
-    public PageDTO<WgPeerDTO> getPeers(
-            @Valid PageRequestDTO pageRequestDTO
-    ) throws ParsingException {
-        Page<WgPeer> peers;
-        Pageable pageable = pageRequestConverter.convert(pageRequestDTO);
-        peers = wgPeerService.getPeers(pageable);
-        return pageDTOConverter.convert(peers);
-    }
+	@Operation(summary = "List of peers", description = "Get a list of all existing peers. Peers are displayed not completely, but page by page." +
+			" Warning, caching is enabled by default, any changes made NOT with wirerest will not appear " +
+			"immediately, but during the next synchronization (60s by default)", tags = {
+					"Peers"
+	}, security = @SecurityRequirement(name = "Token"), responses = {
+			@ApiResponse(responseCode = "200", description = "OK", content = {
+					@Content(mediaType = "application/json", schema = @Schema(nullable = true, implementation = PageDTO.class), examples = {
+							@ExampleObject(name = "Page", ref = "#/components/examples/PageWithPeers")
+					})
+			}),
+			@ApiResponse(responseCode = "400", description = "Bad Request", content = {
+					@Content(mediaType = "application/json", schema = @Schema(implementation = AppError.class, name = "BadRequestExample"), examples = {
+							@ExampleObject(name = "Invalid key format", ref = "#/components/examples/InvalidPubKey400"),
+							@ExampleObject(name = "Invalid page", ref = "#/components/examples/InvalidPage400"),
+					})
+			})
+	})
+	@GetMapping
+	@Parameter(name = "page",//
+			description = "Page number",//
+			schema = @Schema(type = "integer", format = "int32"))
+	@Parameter(name = "limit", //
+			description = "Page size (In case of 0, all peers will be returned)",//
+			schema = @Schema(type = "integer", format = "int32", defaultValue = "100"))
+	@Parameter(name = "sort", //
+			description = "Sort key and direction separated by a dot. The keys are the same as in the answer. " +
+					"Direction is optional and may have value DESC (High to low) and ASC (Low to high). Using with a large number " +
+					"of the peers (3000 or more) affects performance. Example: \"lastHandshakeTime.DESC\"",//
+			schema = @Schema(type = "string"))
+	@Parameter(name = "pageRequestDTO", hidden = true)
+	public PageDTO<WgPeerDTO> getPeers(
+			@Valid PageRequestDTO pageRequestDTO) throws ParsingException {
+		Page<WgPeer> peers;
+		Pageable pageable = pageRequestConverter.convert(pageRequestDTO);
+		peers = wgPeerService.getPeers(pageable);
+		return pageDTOConverter.convert(peers);
+	}
 }

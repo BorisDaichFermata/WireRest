@@ -27,7 +27,7 @@ public class OpenApiConfig {
     @Bean
     public OpenAPI openAPI() {
         return new OpenAPI().addSecurityItem(new SecurityRequirement().
-                        addList("Token Authentication"))
+                        addList("Token"))
                 .components(new Components().addSecuritySchemes
                         ("Token", createAPIKeyScheme()))
                 .info(new Info().title("WireRest")
